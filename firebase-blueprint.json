@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "Individual student enrolled in the institute",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "enrollmentDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "at-risk", "inactive"] },
+        "riskScore": { "type": "number", "description": "Score from 0-100 indicating dropout risk" },
+        "lastContactedAt": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["name", "phone", "status"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Daily attendance records",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["present", "absent", "late"] },
+        "markedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "date", "status"]
+    },
+    "CommunicationLog": {
+      "title": "Communication Log",
+      "description": "Records of calls and messages to students",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["call", "whatsapp", "sms"] },
+        "outcome": { "type": "string", "enum": ["answered", "no-answer", "busy", "switched-off", "wrong-number"] },
+        "notes": { "type": "string" }
+      },
+      "required": ["studentId", "timestamp", "type", "outcome"]
+    }
+  },
+  "firestore": {
+    "students": {
+      "schema": "Student",
+      "description": "Main students collection"
+    },
+    "attendance": {
+      "schema": "Attendance",
+      "description": "Historical attendance records"
+    },
+    "communicationLogs": {
+      "schema": "CommunicationLog",
+      "description": "Logs of all contact attempts"
+    }
+  }
+}
