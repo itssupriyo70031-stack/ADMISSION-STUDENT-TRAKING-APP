@@ -14,7 +14,8 @@ import {
   Filter,
   TrendingDown,
   ChevronRight,
-  PhoneCall
+  PhoneCall,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
@@ -66,6 +67,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'attendance' | 'students' | 'risks'>('dashboard');
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [studentToDelete, setStudentToDelete] = useState<{id: string, name: string} | null>(null);
 
   useEffect(() => {
     loadData();
@@ -74,6 +76,14 @@ export default function App() {
   const loadData = async () => {
     const data = await studentService.getAll();
     if (data) setStudents(data);
+  };
+
+  const handleDelete = async () => {
+    if (studentToDelete) {
+      await studentService.delete(studentToDelete.id);
+      setStudentToDelete(null);
+      loadData();
+    }
   };
 
   const filteredStudents = useMemo(() => {
@@ -269,7 +279,7 @@ export default function App() {
             )}
 
             {activeTab === 'students' && (
-              <StudentsView students={filteredStudents} onUpdate={loadData} />
+              <StudentsView students={filteredStudents} onUpdate={loadData} setStudentToDelete={setStudentToDelete} />
             )}
 
             {activeTab === 'risks' && (
@@ -289,6 +299,49 @@ export default function App() {
           }} 
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {studentToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setStudentToDelete(null)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative bg-white w-full max-w-sm rounded-[32px] p-8 shadow-2xl text-center"
+            >
+              <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100">
+                <Trash2 className="w-8 h-8 text-rose-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Are you sure?</h3>
+              <p className="text-sm text-slate-500 mt-2 mb-8">
+                You are about to delete <span className="font-bold text-slate-900">{studentToDelete.name}</span>. This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setStudentToDelete(null)}
+                  className="flex-1 py-3.5 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleDelete}
+                  className="flex-1 py-3.5 bg-rose-500 text-white font-bold rounded-2xl hover:bg-rose-600 shadow-lg shadow-rose-100 transition-all"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -457,7 +510,7 @@ function AttendanceView({ students, onUpdate }: { students: Student[], onUpdate:
   );
 }
 
-function StudentsView({ students, onUpdate }: { students: Student[], onUpdate: () => void }) {
+function StudentsView({ students, onUpdate, setStudentToDelete }: { students: Student[], onUpdate: () => void, setStudentToDelete: (s: {id: string, name: string}) => void }) {
   const [selectedForHistory, setSelectedForHistory] = useState<string | null>(null);
   const [logs, setLogs] = useState<CommunicationLog[]>([]);
 
@@ -492,7 +545,7 @@ function StudentsView({ students, onUpdate }: { students: Student[], onUpdate: (
     await studentService.update(id, { dropoutReason: reason });
     onUpdate();
   };
-
+  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -508,7 +561,16 @@ function StudentsView({ students, onUpdate }: { students: Student[], onUpdate: (
                 {student.name.charAt(0)}
               </div>
               <div className="flex flex-col items-end gap-2 text-right">
-                <RiskBadge score={student.riskScore} />
+                <div className="flex items-center gap-2">
+                  <RiskBadge score={student.riskScore} />
+                  <button 
+                    onClick={() => setStudentToDelete({ id: student.id, name: student.name })}
+                    className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                    title="Delete Student"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
                 <div className="text-[10px] text-slate-400 font-bold uppercase">Risk: {student.riskScore}%</div>
               </div>
             </div>

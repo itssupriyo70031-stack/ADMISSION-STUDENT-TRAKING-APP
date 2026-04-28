@@ -10,7 +10,8 @@ import {
   serverTimestamp,
   Timestamp,
   getDoc,
-  setDoc
+  setDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Student, Attendance, CommunicationLog, Outcome, StudentStatus } from '../types';
@@ -65,6 +66,15 @@ export const studentService = {
       await updateDoc(doc(db, 'students', id), data);
     } catch (e) {
       handleFirestoreError(e, OperationType.UPDATE, path);
+    }
+  },
+
+  async delete(id: string) {
+    const path = `students/${id}`;
+    try {
+      await deleteDoc(doc(db, 'students', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, path);
     }
   }
 };
